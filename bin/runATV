@@ -1,0 +1,8 @@
+
+#!/bin/bash
+
+THISDIR=`pwd`
+cd /home/daniel/installation/forester-1.92
+#java -cp ATVapp.jar ATVapp
+# /usr/lib/jre/bin/java -cp ATVapp.jar ATVapp
+/usr/java/jre1.5.0_02/bin/java -cp ATVapp.jar ATVapp $THISDIR/$1

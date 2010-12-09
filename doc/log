@@ -1,0 +1,221 @@
+
+cat the_last_few_plates.fasta.screen malaria.040512.seq.screen > malaria.040526.screen
+cat the_last_few_plates.fasta.qual malaria.040512.seq.qual > malaria.040526.seq.qual
+./pruneESTsForClustering_x_mod.pl malaria.040526.screen malaria.040526.seq.qual malaria.040526.screen.qp.seq --prune-x --write-qual malaria.040526.screen.qp.seq.qual > malaria.040526.screen.qp.log
+consedify.pl malaria.040526.screen.qp.seq malaria.040526.screen.qp.seq.qual ../phd_dir
+
+rCO25nFBr17.esd
+fCO26nDBL28.esd
+rSE19nDBL13.esd
+rSE47AF48 .esd
+XXXXXXXXXXXXXXXXXGCCCATTCGTCGAACCAACGTAAATGTTGAGGGACGTAATCTAAATTGGTAGGAACTTTTCCTTCATTACGGCCACATTGACCATTTGAAAATACGTATAGACCGTCGCTTGA
+
+dump due to multi x.. (but, really, there's some ok seq in here, so cut after last X would be ok in this particular case)
+
+grep -c XXXX malaria.040526.screen.qp.seq
+4
+Ok, so, I'll cut them away (*AND* repair the script for later).
+Please rerun consedify...
+
+./loqual_ambigous_primer_bases.pl primer_patterns.txt malaria.040526.screen.qp.seq malaria.040526.screen.qp.seq.qualmalaria.040526.screen.qp.plq.qual > malaria.040526.screen.qp.plq.log
+
+fasta_header_grep.pl -f malaria.040526.screen.qp.loqualprreg.seq.nonsingletons.list malaria.040526.screen.qp.loqualprreg.seq.contigs > malaria.040526.screen.qp.loqualprreg.seq.nonsingletons 
+
+transeq -frame 6 -sequence malaria.040526.screen.qp.loqualprreg.seq.nonsingletons -outseq malaria.040526.screen.qp.loqualprreg.seq.nonsingletons.pep 
+
+sed -e 's/\*//g;' < malaria.040526.screen.qp.seq.consedified.contigs.pep.6 > malaria.040526.screen.qp.seq.consedified.contigs.pep.6.stops_artificially_removed
+
+fuzzpro -pattern ARSFADIG -mismatch 2 -sequence malaria.040526.screen.qp.seq.consedified.contigs.pep.6.stops_artificially_removed -outfile malaria.040526.screen.qp.seq.consedified.contigs.pep.6.ARSFADIG.2mism.fuzzpro
+
+grep Sequence: malaria.040526.screen.qp.seq.consedified.contigs.pep.6.ARSFADIG.2mism.fuzzpro | cut -f 3 -d' ' > malaria.040526.screen.qp.seq.consedified.contigs.pep.6.ARSFADIG.2mism.list
+
+for entry in `cat malaria.040526.screen.qp.seq.consedified.contigs.pep.6.ARSFADIG.2mism.list` ; do /grando/project/tcrg/bin/fasta_header_grep.pl $entry malaria.040526.screen.qp.seq.consedified.contigs.pep.6 >> malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.pep ; done
+
+#flipflop
+formatdb -i malaria.040526.screen.qp.seq.consedified.contigs -p F
+  1011  10:46   blastall -i malaria.040526.screen.qp.seq.consedified.contigs -o malaria.040526.screen.qp.seq.consedified.contigs.ego.bln -F F -d malaria.040526.screen.qp.seq.consedified.contigs -v 2000 -b 2000 -p blastn
+# coredump on mimer on seq 1537 due to exceeded maxfilesize; start again on 1537-> and concatenate, or..
+
+# clustalw & bootstrap 500 the pep file AND..
+
+grep \> malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.pep | sed -e 's/>//; s/_/ /;' > malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.frames
+
+perl -ne 'chomp; @r = split /\s+/; if($r[1] >3) { print $r[0]."\n"; }' < malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.frames > malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.flipus
+
+for entry in `cat malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.flipus`; do /grando/project/tcrg/bin/fasta_header_grep.pl $entry$ malaria.040526.screen.qp.seq.consedified.contigs >> malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.flipus.seq ; done
+
+revseq malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.flipus.seq malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.flipped
+
+# get the remainder (non-flips); i e the ARSFADIGseqs < 4 ..
+
+perl -ne 'chomp; @r = split /\s+/; if($r[1] <=3) { print $r[0]."\n"; }' < malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.frames > malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.dont_flipus
+
+for entry in `cat malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.dont_flipus`; do /grando/project/tcrg/bin/fasta_header_grep.pl $entry$ malaria.040526.screen.qp.seq.consedified.contigs >> malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.dont_flipus.seq ; done
+
+# cat malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.dont_flipus.seq malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.flipus.seq > malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.flipped.seq
+
+cat malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.dont_flipus.seq malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.flipped > malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.flipped.seq
+
+perl -ne 'chomp;  if (m/>.*\.([^\.]+)$/) {print ">", $1, "\n"; } else { print $_."\n"; }' < malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.flipped.seq > malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.flipped.clustalnames.seq
+
+blastall -i malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.flipped.clustalnames.seq -d ../pf_gbk_plasmodb_040512_var_gene_sequences.fasta -F F -o malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.flipped.clustalnames_vs_pf_gbk_040512.bln -p blastn
+
+to_demo/parselargemegablast.dev.pl -c 0.3 -i 0.96 < malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.flipped.clustalnames_vs_pf_gbk_040512.bln > malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.flipped.clustalnames_vs_pf_gbk_040512.bln.gff
+
+# "typesort"
+./print_isolate_list_from_ace_file.pl --isolatefrac < malaria.040526.screen.qp.seq.consedified.ace > malaria.040526.screen.qp.seq.consedified.ace.isolatefrac
+
+./print_isolate_list_from_ace_file.pl < malaria.040526.screen.qp.seq.consedified.ace > malaria.040526.screen.qp.seq.consedified.ace.frac_count
+
+sort -k3,3 -k4,4nr  malaria.040526.screen.qp.seq.consedified.ace.frac_count > malaria.040526.screen.qp.seq.consedified.ace.frac_count.sort
+
+to_demo/add_useful_info_to_tree.pl --typesort malaria.040526.screen.qp.seq.consedified.ace.isolatefrac --fractioncount malaria.040526.screen.qp.seq.consedified.ace.frac_count.sort --dominant_cutoff 6 --blasthitgff malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.flipped.clustalnames_vs_pf_gbk_040512.bln.c30i99.gff --tree malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.dnd > malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.2mism.clustalnames.named.dnd
+
+to_demo/add_useful_info_to_tree.pl --typesort malaria.040526.screen.qp.seq.consedified.ace.isolatefrac --fractioncount malaria.040526.screen.qp.seq.consedified.ace.frac_count.sort --dominant_cutoff 6 --blasthitgff malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.flipped.clustalnames_vs_pf_gbk_040512.bln.c30i99.gff --tree malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.flipped.clustalnames.dnd > malaria.040526.screen.qp.seq.consedified.contigs.ARSFADIG.flipped.clustalnames.named.dnd
+
+##
+
+find dupes when using 3 mism arsfadig
+
+perl -ne 'chomp; m/(Contig\d+)/; print $1,"\n";'  < malaria.040526.screen.qp.seq.loq.contigs.nons.pep.artif_rem.ARSFADIG.3mism.list |sort |uniq -c |sort -n  
+
+emacs malaria.040526.screen.qp.seq.loq.contigs.nons.pep.artif_rem.ARSFADIG.3mism.fuzzpro.edit
+grep Sequence: malaria.040526.screen.qp.seq.loq.contigs.nons.pep.artif_rem.ARSFADIG.3mism.fuzzpro.edit  | cut-f 3 -d' ' > malaria.040526.screen.qp.seq.loq.contigs.nons.pep.artif_rem.ARSFADIG.3mism.list   
+perl -ne 'chomp; m/(Contig\d+)/; print $1,"\n";'  < malaria.040526.screen.qp.seq.loq.contigs.nons.pep.artif_rem.ARSFADIG.3mism.list |sort |uniq -c |sort -n   
+
+./show_clusters.pl malaria.040526.screen.qp.seq.loq.contigs.ARSFADIG.3mism.consednames.flipped.info.dnd 0.02 |less
+# seems at a casual look that the forests are decently separated by true "differences" (or PCR artifacts; note diffs after A-stretches..)
+
+./bin/print_useful_info_about_each_contig.pl --typesort malaria.040526.screen.qp.seq.loq.isolatefrac --fractioncount malaria.040526.screen.qp.seq.loq.frac_count.sort --dominant_cutoff 6 --blasthitgff malaria.040526.screen.qp.seq.loq.contigs.ARSFADIG.3mism.consednames.flipped_pfvar_040512.c40i96.gff --exclude_from_dominance./var_common_gbk_ids --dominants_only > malaria.040526.screen.qp.seq.loq.6dominants.info
+./bin/print_useful_info_about_each_contig.pl --typesort malaria.040526.screen.qp.seq.loq.isolatefrac --fractioncount malaria.040526.screen.qp.seq.loq.frac_count.sort --dominant_cutoff 1 --blasthitgff malaria.040526.screen.qp.seq.loq.contigs.ARSFADIG.3mism.consednames.flipped_pfvar_040512.c40i96.gff --exclude_from_dominance./var_common_gbk_ids --dominants_only> malaria.040526.screen.qp.seq.loq.1dominants.info
+sort -k1.7n malaria.040526.screen.qp.seq.loq.1dominants.info
+cut -f 1 malaria.040526.screen.qp.seq.loq.1dominants.info > malaria.040526.screen.qp.seq.loq.1dominants.list
+fasta_header_grep.pl -f malaria.040526.screen.qp.seq.loq.1dominants.list malaria.040526.screen.qp.seq.loq.contigs.ARSFADIG.3mism.consednames.flipped.seq > malaria.040526.screen.qp.seq.loq.1dominants.fasta
+clustalw malaria.040526.screen.qp.seq.loq.1dominants.fasta
+
+./bin/add_useful_info_to_tree.pl --typesort malaria.040526.screen.qp.seq.loq.isolatefrac --fractioncount malaria.040526.screen.qp.seq.loq.frac_count.sort  --dominant_cutoff 6 --blasthitgff malaria.040526.screen.qp.seq.loq.contigs.ARSFADIG.3mism.consednames.flipped_pfvar_040512.c40i96.gff --tree malaria.040526.screen.qp.seq.loq.1dominants.dnd --exclude_from_dominance var_common_gbk_ids > malaria.040526.screen.qp.seq.loq.1dominants.info.dnd
+
+# bootstrap the small tree... 
+# still some se clusters?
+- Probably no more than as could be expected by chance (quantify..)
+- But, note the Contigs 1447, 1501, 1490, 1550 and 1569 cluster. All se-dominants (well, 1501 is a uks 3rd subdominant) 
+
+# any particular SNPs/inserts/motifs that occur in the SE?
+
+grep 'se[0-9]\{1\}\|uks[0-9]\{1\}' malaria.040526.screen.qp.seq.loq.1dominants.info |cut -f1>  malaria.040526.screen.qp.seq.loq.1dominants.sev.list
+grep 'co[0-9]\{1\}\|cp[0-9]\{1\}' malaria.040526.screen.qp.seq.loq.1dominants.info |cut -f1 > malaria.040526.screen.qp.seq.loq.1dominants.mil.list
+
+meme -dna -mod zoops -nmotifs 15 -minw 9 -maxw 24 malaria.040526.screen.qp.seq.loq.1dominants.fasta
+
+# using the same list, get the proteins
+# possibly remove translations with (multiple?) inframe stops
+
+# do the protein tree for the small set!
+# any particular motif?
+
+
+--
+grep ^CO malaria.040526.screen.qp.seq.loq.ace |grep -f malaria.040526.screen.qp.seq.loq.1dominants.all.info.PFE1640w.list | cut -f4 -d' ' |perl -e '$sum = 0; while (<STDIN>) { chomp; $sum += $_; } print $sum."\n";'
+2353
+
+# join together:
+
+# non-stop
+
+# one-stop
+fasta_pep_re.pl --regexp \\* --infile malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep |cut -f3 |sort -k1.7n |uniq -c |sort -n > malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.uniq.nsort
+grep \ 1\  malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.uniq.nsort |wscut.pl -f 3 malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.uniq.nsort > malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.uniq.nsort.names
+perl -ne 'chomp;  if (m/.*\.([^\.]+)$/) {print $1, "\n"; } else { print $_."\n"; }'< malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.uniq.nsort.names > malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.uniq.nsort.clustalnames
+
+# get correct peptides into file
+# check nr of stop codon containing..
+
+fasta_header_grep -f phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.list malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.pep
+
+fasta_pep_re.pl --regexp \\* --infile phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.pep |cut -f3 |sort -k1.7n |uniq -c |sort -n > phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.pep.nstopsort
+
+grep \ 1\   |wscut.pl -f 3 malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.uniq.nsort > malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.uniq.nsort.names
+
+perl -ne 'chomp;  if (m/.*\.([^\.]+)$/) {print $1, "\n"; } else { print $_."\n"; }'< malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.uniq.nsort.names > malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.uniq.nsort.clustalnames
+
+cut -f1 -d'_' malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.list.unedited |uniq -c |grep \ 2\ | wscut.pl -f 3 > dupes
+
+# multi-stop ARSFADIG segment
+#-# Lets start with realigning the contigs instead, since it seems some of the prominent frameshifts stem from *AAAAAAA* stupidity from phrap.
+---
+
+malaria.040526.screen.qp.seq.loq.5.dominants.list.without_stops
+
+grep -v -f malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.with_stops malaria.040526.screen.qp.seq.loq.5.dominants.list > malaria.040526.screen.qp.seq.loq.5.dominants.list.without_stops
+[daniel@ichiban malaria]$ grep -f malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.with_stops malaria.040526.screen.qp.seq.loq.5.dominants.list > malaria.040526.screen.qp.seq.loq.5.dominants.list.with_stops
+[daniel@ichiban malaria]$ wc -l malaria.040526.screen.qp.seq.loq.5.dominants.list.without_stops
+310 malaria.040526.screen.qp.seq.loq.5.dominants.list.without_stops
+[daniel@ichiban malaria]$ wc -l malaria.040526.screen.qp.seq.loq.5.dominants.list.with_stops
+87 malaria.040526.screen.qp.seq.loq.5.dominants.list.with_stops
+
+
+# realign test
+
+mkdir malaria.040526.screen.qp.seq.loq.ace.raws
+cd malaria.040526.screen.qp.seq.loq.ace.raws
+../bin/ace2raw.pl --infile dummy2.ace
+../trapzone/modules/aligner/Realigner/Realigner -b 20 <	 1578.raw > 1578.real.raw
+../bin/raw2multifasta.pl 1578.ids 1578.real.raw > 1578.real.fasta
+../bin/fasta2aln.pl 1578.real.fasta 1578.real.aln
+
+# full scale
+../bin/ace2raw.pl --infile ../malaria.040526.screen.qp.seq.loq.ace
+# and loop
+
+[daniel@ichiban malaria.040526.screen.qp.seq.loq.ace.raws]$ for file in *raw ; do ../bin/Realigner -b 20 < $file > `basename $file .raw`.real ; ../bin/raw2multifasta.pl `basename $file .raw`.ids `basename $file .raw`.real > `basename $file .raw`.real.fasta ; ../bin/fasta2aln.pl `basename $file .raw`.real.fasta `basename $file .raw`.real.aln ; done 
+
+# and then call a concensus
+
+for file in malaria.040526.screen.qp.seq.loq.ace.raws/*real.fasta ; do ./bin/multifasta2cons.pl $file malaria.040526.screen.qp.seq.loq.ace.real/`basename $file .real.fasta`.real.cons.fasta; done
+
+cd malaria.040526.screen.qp.seq.loq.ace.real
+cat *real.cons.fasta > ../malaria.040526.screen.qp.seq.loq.phrap.real.cons.fasta
+cd ..
+perl -ne 'chomp; if (m/^>(\d+)/) { print ">Contig".$1,"\n"; } else { print $_,"\n"; }' < malaria.040526.screen.qp.seq.loq.phrap.real.cons.fasta > malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.fasta
+fasta_header_grep.pl -f malaria.040526.screen.qp.seq.loq.nonsingletons.list malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.fasta > malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.fasta
+
+transeq -frame 6 -sequence malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.fasta -outseq malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep
+sed -e 's/\*//g;' < malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep > malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops
+fuzzpro -pattern ARSFADIG -mismatch 3 -sequence malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops -outfile malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.fuzzpro
+
+grep Sequence: malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.fuzzpro  | cut -f 3 -d' ' > malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.list.unedited
+cut -f1 -d'_' malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.list.unedited |uniq -c |sort
+
+# remove duplicates with most mismatches
+grep -A9 -f dupes malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.fuzzpro |perl -e '$best = 4; $pair = 0; $last_match = ""; $current_match = ""; while (<STDIN>) { if (m/Sequence:\s+(Contig\d+_\d+)\s+/) { $last_match = $current_match; $current_match= $1; $pair = (($pair==0) ? 1 : 0); $DEBUG && print "DEBUG $pair $current_match\n"} elsif (m/End/) { $next_row = <STDIN>; ($mismatches_this_row) = ($next_row =~ m/^\s+\d+\s+\d+\s+([\.0-9]+)/); $mismatches_this_row == "." && ($mismatches_this_row = 0); if($pair == 0) { if($mismatches_this_row < $best) { print $last_match,"\n"; } else { print $current_match,"\n"; } } else { $best = $mismatches_this_row; } } }' > dupes.list
+grep -v -f dupes.list malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.list.unedited > malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.list
+
+fasta_header_grep.pl -f malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.list malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep > malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.pep
+
+fasta_pep_re.pl --regexp \\* --infile malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.pep |cut -f3 |grep Contig |sort -k1.7n |uniq -c |sort -n > malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.nstopsort
+
+# since we believe there to be some faults to this consensus calculation (truncations of valid ends of high coverage contigs, corresponding to single primer one dir regions AS WELL AS incorrectly inserted single bases in intermediate coverage contigs - eg a 6 read contig requires only one read to have a base in a column for insertion there... REALLY should use base qual in some kind of windowed approach..) we'll use these re-aligned contigs only when the phrap contigs have stops
+
+ cut -d '_' -f 1 < malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.nstopsort.names > malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.nstopsort.names.first_part
+grep -v -f malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.nstopsort.names.first_part malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.list > malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.ARSFADIG.3mism.nostops
+cut -d '_' -f 1 malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.ARSFADIG.3mism.nostops > malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.ARSFADIG.3mism.nostops.fp.list
+grep -f malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.ARSFADIG.3mism.nostops.fp.list 040526_loqual_early_and_late_primer_noreal/malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.withstops.clustalnames.first_part
+grep -f malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.ARSFADIG.3mism.nostops.fp.list 040526_loqual_early_and_late_primer_noreal/malaria.040526.screen.qp.seq.loq.contigs.nons.ARSFADIG.3mism.pep.withstops.clustalnames.first_part > malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.ARSFADIG.3mism.nostops.had_stops_in_non_real.list
+
+# so, get reading frame-names, extract peptides, add to the old non-stop list, (print info to see if any were indeed dominant?), clustal, add info, extract motifs
+
+fasta_header_grep.pl -f malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.ARSFADIG.3mism.nostops.had_stops_in_non_real.listmalaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.nostops.ARSFADIG.3mism.pep > malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.ARSFADIG.3mism.nostops.had_stops_in_non_real.pep
+fasta_header_grep.pl -f malaria.040526.screen.qp.seq.loq.5.dominants.list ../malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.ARSFADIG.3mism.nostops.had_stops_in_non_real.pep > ../malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.ARSFADIG.3mism.nostops.had_stops_in_non_real.5.domininants.pep
+cat ../malaria.040526.screen.qp.seq.loq.phrap.real.cons.clustalnames.nonsingletons.pep.ARSFADIG.3mism.nostops.had_stops_in_non_real.5.domininants.pep malaria.040526.screen.qp.seq.loq.5.dominants.without_stops.clustalnames.pep > malaria.040526.screen.qp.seq.loq.5.dominants.without_stops.real.cons16.pep
+perl -ne 'chomp; if (m/^>Contig(\d+)/) { print ">Contig".$1,"\n"; } else { print $_,"\n"; }' < malaria.040526.screen.qp.seq.loq.5.dominants.without_stops.real.cons16.pep  > malaria.040526.screen.qp.seq.loq.5.dominants.without_stops.real.cons16.clustalnames.pep
+clustalw malaria.040526.screen.qp.seq.loq.5.dominants.without_stops.real.cons16.clustalnames.pep
+
+../bin/section_alignent.pl --debug --in malaria.040526.screen.qp.seq.loq.5.dominants.without_stops.real.cons16.clustalnames.aln --fractioncount ../040526_loqual_early_and_late_primer_noreal/malaria.040526.screen.qp.seq.loq.frac_count.sort --exclude_from_dominance ../var_common_gbk_ids --blasthitgff ../040526_loqual_early_and_late_primer_noreal/malaria.040526.screen.qp.seq.loq.contigs.ARSFADIG.3mism.consednames.flipped_pfvar_040512.c40i96.gff --dominant_cutoff 6 > malaria.040526.screen.qp.seq.loq.5.dominants.without_stops.real.cons16.clustalnames.aln.section.debug 2>&1
+
+# add in the realigned versions with stops as well, or match to var common first? Add realigned for n_reads > 18 or so?
+# any phrap-non-ARSFADIG contigs that "got" an ARSFADIG by realignment?
+
+
+
+
+

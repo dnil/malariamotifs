@@ -1,0 +1,123 @@
+grep DKL\ for\ column Rosetting.dominancelist060313.1dom.edit.section_dkl |sed -e 's/DKL for column = //;' > Rosetting.dominancelist060313.1dom.edit.section_dkl.col_dkl    
+
+cd /home/daniel/malaria.0610
+ for (( i = 1; $i <= 100; i = $i + 1 )) ; do ./make_random_set.pl > 1dom/test_dkl/rndset.$i ; done
+
+cd 1dom/test_dkl/
+
+for file in 1dom.rndset*tab ; do echo $file; /home/daniel/malaria.0606/malariamotifs/bin/section_alignment.v2_dkl_test.pl --in Dominancelist060313.1dom.edit.aln -t $file -s > `basename $file .tab`.section_dkl ; done
+
+
+for file in 1dom.rndset.*.section_dkl ; do grep DKL\ for\ column $file |sed -e 's/DKL for column = //;' > `basename $file .section_dkl`.col_dkl ; done        
+
+R
+
+norm <- rep(0,193)   
+for(i in 1:1000) {
+tmp <- read.table(sprintf("1dom.rndset.%d.col_dkl",i))
+norm = norm + tmp$V1
+}
+norm = norm / i
+
+d <- read.table("Dominancelist060313.1dom.edit.section_dkl.col_dkl")     
+r <- read.table("Rosetting.dominancelist060313.1dom.edit.section_dkl.col_dkl")  
+plot(r$V1 - norm ,type="h",xaxp=c(0,200,20))     
+
+#
+
+dkl<-(matrix(data=rep(rep(0, 193),1000) ,nrow=193, ncol=1000))
+for(i in 1:1000) {
+tmp <- read.table(sprintf("1dom.rndset.%d.col_dkl",i))
+dkl[,i]<-tmp
+}
+
+# quantile tests
+quantile(dkl[,3], 0.95)
+
+q99<-rep(0,193)
+for(i in 1:193) { q99[i] <- quantile(dkl[,i], 0.99) }
+
+# Print P for sign pos..
+#for(i in 1:193) {Pdkli <-ecdf (dkl[,i]); print(1-Pdkli(semi$V1[i])) }
+#for(i in 1:193) {Pdkli <-ecdf (dkl[,i]); p<- 1-Pdkli(semi$V1[i]); if(p<=0.05) { print(c(i,p)) } else { } }
+
+for(i in 1:193) {Pdkli <-ecdf (dkl[,i]); p<- 1-Pdkli(rr$V1[i]); if(p<=0.05) { print(sprintf("At pos %3i P = %.4f", i,p)) } else { } }
+
+
+rr$P = rep(0,193)
+for(i in 1:193) {Pdkli <-ecdf (dkl[,i]); p <- 1-Pdkli(rr$V1[i]); rr$P[i] <- p ; if(p<=0.05) { print(sprintf("At pos %3i P = %.4f", i,p)) } else { } }
+plot(rr$V1, type="h")
+points(-log10(rr$P), col="dark red")
+lines(-log10(rr$P), col="dark red")
+
+lines(xy.coords( 1:193, rep(-log10(0.05), 193)), col="red")
+#lines(xy.coords( lrrpidx, rep(-log10(0.05), 193)), col="dark red")
+
+
+--
+file=smNUD.g1.tab
+/home/daniel/malaria.0606/malariamotifs/bin/section_alignment.v2_dkl_test.pl --in 3dom.060314.noprimerends2.aln -t $file -s > $file.section_dkl
+grep DKL\ for\ column $file.section_dkl |sed -e 's/DKL for column = //;' > $file.col_dkl
+--
+
+alignlen <- 206
+randiters <- 10000
+dkl<- matrix(data=rep(rep(0,alignlen),randiters), nrow=alignlen, ncol=randiters)
+for(i in 1:randiters) {
+tmp <- read.table(sprintf("rndset.%d.col_dkl",i))
+dkl[,i]<-tmp$V1
+}
+
+group <- read.table("smNUD.g1.tab.col_dkl")
+group <- read.table("RD.g2.tab.col_dkl")
+group <- read.table("CM.g3.tab.col_dkl")
+
+group$P = rep(0,alignlen)
+for(i in 1:alignlen) {Pdkli <-ecdf (dkl[,i]); p <- 1-Pdkli(group$V1[i]); group$P[i] <- p ; if(p<=0.05) { print(sprintf("At pos %3i P = %.4f", i,p)) } else { } }
+
+gidx <- 1:alignlen  
+lgp <- -log10(group$P)
+lgp95 <- lgp < -log10(.05)
+
+plot(group$V1, type="h", lwd="5", ylab="D_KL", xlab="Alignment pos")
+title(main="Group 1 smNUD")
+
+plot.xy( xy.coords(gidx[!lgp95], group$V1[!lgp95]), type="h", col="red",lwd=5)
+
+abline( h=-log10(.05) , col="dark red", lwd=2)
+points( gidx[lgp95], lgp[lgp95]  , col="dark gray",pch=19 )
+	points( gidx[!lgp95], lgp[!lgp95]  , col="dark red",pch=19 )
+
+pdf(file="g1.smNUD.dklplot.pdf", paper=a4)
+dev.off()
+
+png(filename="g1.smNUD.dklplot.png",width=1400,height=400)
+plot(group$V1, type="h", lwd="4", ylab="D_KL", xlab="Alignment pos")
+title(main="Group 1 smNUD")
+plot.xy( xy.coords(gidx[!lgp95], group$V1[!lgp95]), type="h", col="red",lwd=4)
+dev.off()
+
+png(filename="g2.RD.dklplot.png",width=1400,height=400)
+plot(group$V1, type="h", lwd="4", ylab="D_KL", xlab="Alignment pos")
+title(main="Group 2 RD")
+plot.xy( xy.coords(gidx[!lgp95], group$V1[!lgp95]), type="h", col="red",lwd=4)
+dev.off()
+
+png(filename="",width=1400,height=400)
+plot(group$V1, type="h", lwd="4", ylab="D_KL", xlab="Alignment pos")
+title(main="Group 2 RD")
+plot.xy( xy.coords(gidx[!lgp95], group$V1[!lgp95]), type="h", col="red",lwd=4)
+dev.off()
+
+png(filename="g3.CM.png",width=1400,height=400)
+plot(group$V1, type="h", lwd="4", ylab="D_KL", xlab="Alignment pos")
+title(main="Group 3 CM")
+plot.xy( xy.coords(gidx[!lgp95], group$V1[!lgp95]), type="h", col="red",lwd=4)
+dev.off()
+
+pdf(file="g1.smNUD.dklplot.pdf", paper="a4",width=14, height=4)
+plot(group$V1, type="h", lwd="2", ylab="D_KL", xlab="Alignment pos")
+title(main="Group 1 smNUD")
+plot.xy( xy.coords(gidx[!lgp95], group$V1[!lgp95]), type="h", col="red",lwd=2)
+dev.off()
+

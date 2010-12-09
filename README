@@ -1,0 +1,109 @@
+Daniel Nilsson, 2004-2009
+
+Dear user, 
+
+I don't like to apologize about code; it is always produced under
+constraints of time (read urgency of publishing the data) and skill,
+but this was an unusually evolutionary project and written way back
+when. I guess it's a sign of progress that I at least now know many,
+many ways to make this better now. Actually probably already could
+think of many back then, but time in PhD sideprojects is a complicated
+resource to manage. If someone could get me a couple of weeks off
+other projects I could get this up to a distributable shape.
+
+That aside, this is how it looked when we used it, so it is actually
+possible. I hope it will be of some use to you too!
+
+This package has been ported successfully to a handful of different
+systems, and at least once by someone other than me, but I
+unfortunately have to advise you to expect it to be quite a bit of
+detective work.
+
+There used to be a website with a current version of the MOTIFF stuff on it, 
+
+http://cruzi.cgb.ki.se/daniel/motiffinder.php
+
+but it appears to be down nowadays.
+
+If you take the time to set this up on your machine, I'd be grateful
+for a note saying so (I'm currently at daniel.nilsson@izb.unibe.ch),
+and, for publications using it, for a reference to the first publication
+(Normark et al, PNAS 2007, PMID: 1789539).
+
+Basically there are two paths to take: start with seqeuncing raw data,
+	  and go all the way to motifs etc - then see
+	  process_reads.sh (comments in FROM RAW DATA below).
+
+or start with a (conceptual) peptide sequence alignment and phenotype
+	  information file to produce motifs: see
+	  section_alingment_v2.pl and rescore_section_file_using_R.pl
+
+There are quite a few handy perl programs in here. Some of the perl
+programs will produce terse usage instructions if invoked without
+parameters. A quick browse some that still not were quite complete yet
+when I left the building are also included.
+
+If you are interested, I also started implementing a
+web-server-version at one point, but this was also left
+incomplete. While it doesn't add anything to the functionality, the
+wrapping might be useful (see mosphet).
+
+FROM RAW DATA
+
+process_reads.sh read_file_name task [matrix]
+
+task, the second parameter, is one of 
+
+     all        -  all of the below
+     most	  -  most of the below :-)
+     phred      -  basecall reads (requires phred, www.phrap.org)
+     trim       -  quality trim (requires EMBOSS, www.emboss.org)
+     phrap      -  assembly/clustering (requires phrap, www.phrap.org)
+     translate  -  conceptual translation (requires EMBOSS)
+     realign    -  realigner (requires realigner, binary shipped else enquire from bjorn.andersson@ki.se)
+                   (also translates realigned reads, req. EMBOSS)
+     flip       -  reorient nucleotide sequences based on best peptide trans using known motifs and top codon count (req EMBOSS)
+     blast      -  attempt to annotate and recognise known sequences (req NCBI blast and a formatted database, preferenially from the gene of interest)    
+                   also instrumental in filtering out possible contaminants and spearately treating e.g. possible known untranslated/unexported genes.
+     tree       -  tree construction (req clustal, www.clustal.org)
+     motifs     -  (req R, www.r-project.org and NCBI blast, EMBOSS for PSSM-export and finding those motifs in other sequences) 
+                   Also run section_alignment w/o options for usage. See also section alignment v2 and rescore using R for more details.
+     cleanup    -  attempts to clean up temporary files etc, but as the concept of temporary is somewhat depending on the task at hand, this is rather permissive.
+
+Several of the perl programs called also depend on bioperl.
+
+The aa-similarity matrix, optional third argument, can be either blosum or gonnet.
+
+There are also a couple of other tasks, lmo and stats, that are
+helpful for development etc. These can also be instructive for how to
+classify the found motifs in new sequences etc.
+
+The required binaries are assumed to be on the PATH, so please set it
+accordingly.
+
+An environment variable (or a few if you use a different catalog
+structure from the original) at the top of the script need to point to
+where your data and these scripts are located.
+
+FROM ALN FILE (AND PHENOTYPE/DOMINANCE TABLE)
+
+Alignment file in clustal aln format. Phenotype/dominance table with a
+tab separated list of sequences and "isolate names".  The latter can
+well substituted for any dichtomy of the sequences, setting one class
+as se00 (from severe disease) and the other as co00 (from control
+set). See the data dir for a couple of examples.
+
+sequence_name	isolate_name
+
+USAGE: section_alignment.v2.pl	<--in clustalw.aln>
+				[--dominancetab|-t dominance_table]
+				[--countmodel oneperisolate]		count one dominant per isolate
+	   			[--ultraconserved f ] 0<f<1 0.82
+  				[--conserved f ] 0<f<1 0.4
+				[--strictsection|-s] Strict section 0
+
+And for a correction to the hypergeometric probs:
+
+USAGE: rescore_section_file_using_R.pl		     <--in section>
+				[--countmodel oneperisolate]		count one dominant per isolate
+				[--motifs_only]   Retain only the motif summary
